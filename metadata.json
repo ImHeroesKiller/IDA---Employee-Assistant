@@ -1,0 +1,7 @@
+{
+  "name": "IDA - Employee Assistant",
+  "description": "AI Assistant for employees, powered by a knowledge base.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

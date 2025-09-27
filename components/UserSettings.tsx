@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
-import { ArrowLeftIcon, MoonIcon, BellIcon, DatabaseIcon, SunIcon, BookOpenIcon, FileTextIcon, Trash2Icon, GlobeIcon, GoogleDriveIcon, CheckCircleIcon, XCircleIcon, BarChartIcon, TelegramIcon, UserPlusIcon, EditIcon, Loader2Icon, BeakerIcon } from './icons/Icons';
+import { ArrowLeftIcon, MoonIcon, BellIcon, DatabaseIcon, SunIcon, BookOpenIcon, FileTextIcon, Trash2Icon, GlobeIcon, GoogleDriveIcon, CheckCircleIcon, XCircleIcon, BarChartIcon, TelegramIcon, UserPlusIcon, EditIcon, Loader2Icon, BeakerIcon, KeyIcon } from './icons/Icons';
 import ToggleSwitch from './ToggleSwitch';
 import EmployeeModal from './EmployeeModal';
+import { geminiService } from '../services/geminiService';
 import type { TrainedDocument, TrainingLog, Employee, ConnectionStatus } from '../types';
 
 interface UserSettingsProps {
@@ -49,7 +49,11 @@ const DocumentIcon = ({ source }: { source: TrainedDocument['source'] }) => {
 const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, notificationSound, setNotificationSound, onOpenTrainingModal, trainedDocuments, onRemoveDocument, trainingLogs, onClearLogs, onOpenAnalytics, telegramToken, setTelegramToken, telegramConnectionStatus, setTelegramConnectionStatus, onNewTelegramChat, employees, onAddEmployee, onUpdateEmployee, onDeleteEmployee }) => {
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
-  const [isTesting, setIsTesting] = useState(false);
+  const [isTelegramTesting, setIsTelegramTesting] = useState(false);
+  const [apiTestStatus, setApiTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [apiTestError, setApiTestError] = useState<string>('');
+  
+  const isApiConfigured = geminiService.isConfigured();
 
   const handleThemeChange = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -72,11 +76,23 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, n
       onAddEmployee(employeeData);
     }
   };
+  
+  const handleTestApiKey = async () => {
+    setApiTestStatus('testing');
+    setApiTestError('');
+    const result = await geminiService.testApiKey();
+    if (result.success) {
+      setApiTestStatus('success');
+    } else {
+      setApiTestStatus('error');
+      setApiTestError(result.error || 'An unknown error occurred.');
+    }
+  };
 
   const handleTestConnection = () => {
-    setIsTesting(true);
+    setIsTelegramTesting(true);
     setTimeout(() => {
-      setIsTesting(false);
+      setIsTelegramTesting(false);
       // Use the provided token to check for success (for demo purposes)
       if (telegramToken === '8243094273:AAFBxDSun1841IfTO5QBE3hctrjHQKWVo78') {
         alert('✅ Connection test successful! The token appears valid.');
@@ -143,6 +159,38 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, n
                 <ToggleSwitch isEnabled={notificationSound} onToggle={() => setNotificationSound(!notificationSound)} />
             </div>
           </div>
+          
+           <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-blue-500 dark:text-blue-400 px-2">Gemini API Status</h3>
+             <div className="p-3 rounded-lg bg-gray-100 dark:bg-[#242f3d]">
+                <div className="flex items-center mb-3">
+                    <KeyIcon className="w-6 h-6 text-gray-500 dark:text-gray-400 mr-4"/>
+                    <span className="font-semibold">API Connection</span>
+                    <span className={`ml-auto text-xs font-bold px-2 py-1 rounded-full flex items-center
+                        ${isApiConfigured ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}
+                    `}>
+                        {isApiConfigured ? 'Live API' : 'Mock Service'}
+                    </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    {isApiConfigured 
+                        ? "An API key is configured. You are connected to the live Gemini API."
+                        : "No API key found. The app is running in mock mode with simulated responses."
+                    }
+                </p>
+                <button 
+                  onClick={handleTestApiKey} 
+                  className="w-full p-2 text-sm font-semibold rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 flex items-center justify-center"
+                  disabled={!isApiConfigured || apiTestStatus === 'testing'}
+                >
+                  {apiTestStatus === 'testing' ? <Loader2Icon className="w-4 h-4 mr-2 animate-spin" /> : <BeakerIcon className="w-4 h-4 mr-2" />}
+                  {apiTestStatus === 'testing' ? 'Testing...' : 'Test Key'}
+                </button>
+                {apiTestStatus === 'success' && <p className="text-xs text-green-400 mt-2 text-center">✅ Test Successful! Connection to Gemini API is working.</p>}
+                {apiTestStatus === 'error' && <p className="text-xs text-red-400 mt-2 text-center">❌ {apiTestError}</p>}
+             </div>
+          </div>
+
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-blue-500 dark:text-blue-400 px-2">Integrations</h3>
@@ -167,7 +215,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, n
                     onChange={(e) => setTelegramToken(e.target.value)}
                     className="w-full bg-gray-200 dark:bg-[#17212b] text-sm rounded-md p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     placeholder="Your Telegram Bot Token"
-                    disabled={isConnecting || isTesting}
+                    disabled={isConnecting || isTelegramTesting}
                 />
                 <div className="grid grid-cols-2 gap-2">
                     {isConnected ? (
@@ -176,11 +224,11 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, n
                         </button>
                     ) : (
                         <>
-                            <button onClick={handleTestConnection} className="p-2 text-sm font-semibold rounded-md bg-gray-200 dark:bg-gray-600 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors disabled:opacity-50 flex items-center justify-center" disabled={isConnecting || isTesting}>
-                                 {isTesting ? <Loader2Icon className="w-4 h-4 mr-2 animate-spin" /> : <BeakerIcon className="w-4 h-4 mr-2" />}
-                                 {isTesting ? 'Testing...' : 'Test'}
+                            <button onClick={handleTestConnection} className="p-2 text-sm font-semibold rounded-md bg-gray-200 dark:bg-gray-600 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors disabled:opacity-50 flex items-center justify-center" disabled={isConnecting || isTelegramTesting}>
+                                 {isTelegramTesting ? <Loader2Icon className="w-4 h-4 mr-2 animate-spin" /> : <BeakerIcon className="w-4 h-4 mr-2" />}
+                                 {isTelegramTesting ? 'Testing...' : 'Test'}
                             </button>
-                            <button onClick={handleConnectTelegram} className="p-2 text-sm font-semibold rounded-md transition-colors bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 flex items-center justify-center" disabled={isConnecting || isTesting}>
+                            <button onClick={handleConnectTelegram} className="p-2 text-sm font-semibold rounded-md transition-colors bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 flex items-center justify-center" disabled={isConnecting || isTelegramTesting}>
                                 {isConnecting && <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />}
                                 {isConnecting ? 'Connecting...' : 'Connect'}
                             </button>

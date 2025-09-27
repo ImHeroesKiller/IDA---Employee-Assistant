@@ -31,6 +31,27 @@ const createMockStream = async function* (prompt: string, trainedDocuments: Trai
 class GeminiService {
   private chatInstances: Map<string, Chat> = new Map();
 
+  public isConfigured(): boolean {
+    return !!ai;
+  }
+
+  async testApiKey(): Promise<{ success: boolean; error?: string }> {
+    if (!ai) {
+      return { success: false, error: "No API key provided in .env.local file." };
+    }
+    try {
+      // Make a simple, lightweight call to check if the key is valid.
+      await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
+      return { success: true };
+    } catch (error: any) {
+      console.error("API Key Test Failed:", error);
+      if (error.message.includes('API key not valid')) {
+          return { success: false, error: "Authentication failed. The API key is invalid." };
+      }
+      return { success: false, error: "Test failed. Could not connect to the API." };
+    }
+  }
+
   private getChatInstance(chatSession: ChatSession): Chat {
     if (this.chatInstances.has(chatSession.id) || !ai) {
       return this.chatInstances.get(chatSession.id)!;

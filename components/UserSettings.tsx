@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeftIcon, MoonIcon, BellIcon, DatabaseIcon, SunIcon, BookOpenIcon, FileTextIcon, Trash2Icon, GlobeIcon, GoogleDriveIcon, CheckCircleIcon, XCircleIcon, BarChartIcon, TelegramIcon, UserPlusIcon, EditIcon, Loader2Icon } from './icons/Icons';
+import { ArrowLeftIcon, MoonIcon, BellIcon, DatabaseIcon, SunIcon, BookOpenIcon, FileTextIcon, Trash2Icon, GlobeIcon, GoogleDriveIcon, CheckCircleIcon, XCircleIcon, BarChartIcon, TelegramIcon, UserPlusIcon, EditIcon, Loader2Icon, BeakerIcon } from './icons/Icons';
 import ToggleSwitch from './ToggleSwitch';
 import EmployeeModal from './EmployeeModal';
 import type { TrainedDocument, TrainingLog, Employee, ConnectionStatus } from '../types';
@@ -49,6 +49,7 @@ const DocumentIcon = ({ source }: { source: TrainedDocument['source'] }) => {
 const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, notificationSound, setNotificationSound, onOpenTrainingModal, trainedDocuments, onRemoveDocument, trainingLogs, onClearLogs, onOpenAnalytics, telegramToken, setTelegramToken, telegramConnectionStatus, setTelegramConnectionStatus, onNewTelegramChat, employees, onAddEmployee, onUpdateEmployee, onDeleteEmployee }) => {
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
 
   const handleThemeChange = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -70,6 +71,19 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, n
     } else {
       onAddEmployee(employeeData);
     }
+  };
+
+  const handleTestConnection = () => {
+    setIsTesting(true);
+    setTimeout(() => {
+      setIsTesting(false);
+      // Use the provided token to check for success (for demo purposes)
+      if (telegramToken === '8243094273:AAFBxDSun1841IfTO5QBE3hctrjHQKWVo78') {
+        alert('✅ Connection test successful! The token appears valid.');
+      } else {
+        alert('❌ Connection test failed. Please check your token.');
+      }
+    }, 1000);
   };
 
   const handleConnectTelegram = () => {
@@ -146,27 +160,36 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, n
                         {telegramConnectionStatus.charAt(0).toUpperCase() + telegramConnectionStatus.slice(1)}
                     </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Note: This is a simulation. In a real app, your token should be stored securely on a server.</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Note: For security, this is a frontend simulation. In a real app, your token must be stored securely on a server.</p>
                 <input 
                     type="password"
                     value={telegramToken}
                     onChange={(e) => setTelegramToken(e.target.value)}
                     className="w-full bg-gray-200 dark:bg-[#17212b] text-sm rounded-md p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     placeholder="Your Telegram Bot Token"
-                    disabled={isConnecting}
+                    disabled={isConnecting || isTesting}
                 />
-                <div className="flex space-x-2">
+                <div className="grid grid-cols-2 gap-2">
                     {isConnected ? (
-                        <button onClick={handleDisconnectTelegram} className="w-full p-2 text-sm font-semibold rounded-md transition-colors bg-red-500 text-white hover:bg-red-600">
+                        <button onClick={handleDisconnectTelegram} className="col-span-2 p-2 text-sm font-semibold rounded-md transition-colors bg-red-500 text-white hover:bg-red-600">
                             Disconnect
                         </button>
                     ) : (
-                        <button onClick={handleConnectTelegram} className="w-full p-2 text-sm font-semibold rounded-md transition-colors bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 flex items-center justify-center" disabled={isConnecting}>
-                            {isConnecting && <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />}
-                            {isConnecting ? 'Connecting...' : 'Connect'}
-                        </button>
+                        <>
+                            <button onClick={handleTestConnection} className="p-2 text-sm font-semibold rounded-md bg-gray-200 dark:bg-gray-600 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors disabled:opacity-50 flex items-center justify-center" disabled={isConnecting || isTesting}>
+                                 {isTesting ? <Loader2Icon className="w-4 h-4 mr-2 animate-spin" /> : <BeakerIcon className="w-4 h-4 mr-2" />}
+                                 {isTesting ? 'Testing...' : 'Test'}
+                            </button>
+                            <button onClick={handleConnectTelegram} className="p-2 text-sm font-semibold rounded-md transition-colors bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 flex items-center justify-center" disabled={isConnecting || isTesting}>
+                                {isConnecting && <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />}
+                                {isConnecting ? 'Connecting...' : 'Connect'}
+                            </button>
+                        </>
                     )}
-                    
+                </div>
+                {telegramConnectionStatus === 'failed' && <p className="text-xs text-red-400 mt-2 text-center">Connection failed. Please check your token and try again.</p>}
+                
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/50">
                     <button 
                         onClick={onNewTelegramChat} 
                         className="w-full p-2 text-sm font-semibold rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
@@ -176,7 +199,6 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onClose, theme, setTheme, n
                        Simulate New Chat
                     </button>
                 </div>
-                {telegramConnectionStatus === 'failed' && <p className="text-xs text-red-400 mt-2 text-center">Connection failed. Please check your token and try again.</p>}
             </div>
           </div>
           

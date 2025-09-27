@@ -1,45 +1,59 @@
-# IDA - Employee Assistant: Deployment Guide
+# IDA - Employee Assistant: Setup Guide
 
-This guide explains how to build and deploy this application to a static hosting service like GitHub Pages.
+This guide explains how to run this application on your local machine and how to build and deploy it to a static hosting service like GitHub Pages.
 
-## ⚠️ Important: API Key Security
+## Running Locally
 
-For this application to connect to the live Google Gemini API, it needs an API key. However, for critical security reasons, this key **cannot** be stored in the frontend code or exposed in a web browser.
+Follow these steps to get the application running on your computer.
 
--   **Security Risk**: If your API key is in your frontend code, anyone visiting your site can find it and use it, potentially leading to high costs and misuse of your account.
--   **Current Design**: This application is designed to get the API key from a secure server environment (`process.env.API_KEY`). Static hosting services like GitHub Pages do not have this secure environment.
+### 1. Prerequisites
 
-**Therefore, when you deploy this application to GitHub Pages, it will not connect to the live Gemini API.**
+Make sure you have [Node.js](https://nodejs.org/) (which includes npm) installed on your system.
 
-Instead, it will automatically fall back to a **built-in mock service**. This allows you to demonstrate the full UI and user flow of the application, but the AI responses will be simulated.
+### 2. Project Setup
 
-### The Professional Solution: A Backend Proxy
+a. Place all the application files (`index.html`, `App.tsx`, etc.) into a folder on your computer.
 
-To make this application fully functional online with a real API key, the standard and secure approach is to create a simple backend server (often called a proxy or middleware).
-
-1.  The frontend (this app) sends user messages to your backend server.
-2.  Your backend server securely stores your API key.
-3.  The backend server adds the key to the request and forwards it to the Google Gemini API.
-4.  The Gemini API responds to your backend, which then sends the response back to the frontend.
-
-This is the industry-standard way to protect secret keys for web applications. You can build such a proxy using services like Vercel Serverless Functions, Netlify Functions, or Google Cloud Functions.
-
-## Deploying to GitHub Pages (with Mock Service)
-
-Here are the steps to build the static files and deploy them to GitHub Pages.
-
-### 1. Project Setup
-
-If you haven't already, you need to set up a local project.
-
-a. Place all the application files (`index.html`, `App.tsx`, etc.) into a new folder on your computer.
-
-b. Open your terminal in the project's root directory and install the necessary packages by running this command (this will also create a `node_modules` folder):
+b. Open your terminal in that folder and install the necessary packages by running:
    ```bash
    npm install
    ```
 
-### 2. Configure for Your Repository
+### 3. (Optional but Recommended) Set up your Gemini API Key
+
+To connect to the live Google Gemini API, you need to provide your API key securely.
+
+a. In the root of your project folder, create a new file named `.env.local`.
+
+b. Add your API key to this file like so:
+   ```
+   API_KEY=your_gemini_api_key_here
+   ```
+   
+**Note**: If you skip this step, the application will use a built-in mock service and will not connect to the real Gemini API. This is useful for UI development without using your key. The `.gitignore` file in this project is already configured to keep this file private.
+
+### 4. Start the Development Server
+
+Run the following command in your terminal:
+```bash
+npm run dev
+```
+
+Your application should now be running! Your terminal will show you the local URL, which is usually `http://localhost:5173`. Open this URL in your web browser.
+
+---
+
+## Deploying to GitHub Pages (with Mock Service)
+
+### ⚠️ Important: API Key Security
+
+For critical security reasons, your Gemini API key **cannot** be stored in the frontend code or exposed in a web browser. Static hosting services like GitHub Pages do not have a secure environment to store secrets.
+
+**Therefore, when you deploy this application to GitHub Pages, it will not connect to the live Gemini API.** It will automatically fall back to the **built-in mock service**, which allows you to demonstrate the full UI and user flow of the application with simulated AI responses.
+
+### Deployment Steps
+
+#### 1. Configure the `base` Path
 
 Open the `vite.config.ts` file and change the `base` property to match your GitHub repository name.
 
@@ -54,7 +68,7 @@ export default defineConfig({
 
 For example, if your repository URL is `https://github.com/your-username/my-ida-bot`, you should set `base: '/my-ida-bot/'`.
 
-### 3. Build the Application
+#### 2. Build the Application
 
 Run the build command in your terminal. This will compile the React/TypeScript code into static HTML, CSS, and JavaScript files in a `dist` folder.
 
@@ -62,7 +76,7 @@ Run the build command in your terminal. This will compile the React/TypeScript c
 npm run build
 ```
 
-### 4. Deploy to GitHub Pages
+#### 3. Deploy to GitHub Pages
 
 This project uses the `gh-pages` package to make deployment simple. Run the following command:
 
@@ -70,6 +84,6 @@ This project uses the `gh-pages` package to make deployment simple. Run the foll
 npm run deploy
 ```
 
-This command will automatically create a `gh-pages` branch on your repository (if it doesn't exist), push the contents of your `dist` folder to it, and your site will be live!
+This command will automatically create a `gh-pages` branch on your repository (if it doesn't exist), push the contents of your `dist` folder to it, and your site will be live.
 
 You can find your live site URL in your repository's settings under the "Pages" section. It will typically be `https://your-username.github.io/your-repo-name/`.

@@ -4,10 +4,10 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // IMPORTANT: Replace 'ida-employee-assistant' with the name of your GitHub repository.
-  // For example, if your repo URL is https://github.com/your-name/my-cool-app,
-  // set base to '/my-cool-app/'.
-  base: '/ida-employee-assistant/', 
+  // Use a base of '/' for local development and root deployments.
+  // For GitHub Pages deployment, you will need to change this to your repo name.
+  // e.g., base: '/my-repo-name/'
+  base: '/', 
   define: {
     // This ensures that process.env.API_KEY is replaced during the build.
     // In a local dev environment with a .env file, it will use the key.
